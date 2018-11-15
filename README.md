@@ -272,6 +272,23 @@ nfc.eraseTag().then(() => {
 });
 ```
 
+### `writeSingleNfcvBytes` (Android only)
+Writes bytes to NfcV memory blocks at starting position using single block write
+
+```typescript
+var opts = {
+  command: [0x02, 0x21],
+  start: 0,
+  blockSize: 4,
+  data: [0x00, 0x00, 0x2A, 0x14, 0xB1, 0x0E, 0xED, 0xCF, 0x9C, 0x7E]
+}
+
+nfc.writeSingleNfcvBytes(opts)
+  .then(() => {
+    console.log("Complete");
+  })
+```
+
 ## Tips
 ### Writing to an empty tag
 You first need to "discover" it with `setOnTagDiscoveredListener` (see below). While you're still "near" the tag you can call `writeTag`.

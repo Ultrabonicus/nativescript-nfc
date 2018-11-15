@@ -88,10 +88,18 @@ export interface OnTagDiscoveredOptions {
   message?: string;
 }
 
+export interface NfcvWriteOptions {
+  command: Array<number> // [0x02, 0x21]
+  start: number// 0
+  blockSize: number // 4
+  data: Array<number> // [0x00, 0x00, 0x2A, 0x14, 0xB1, 0x0E, 0xED, 0xCF, 0x9C, 0x7E]
+}
+
 export interface NfcApi {
   available(): Promise<boolean>;
   enabled(): Promise<boolean>;
   writeTag(arg: WriteTagOptions): Promise<any>;
+  writeSingleNfcvBytes(args: NfcvWriteOptions): Promise<any>;
   eraseTag(): Promise<any>;
   /**
    * Set to null to remove the listener.

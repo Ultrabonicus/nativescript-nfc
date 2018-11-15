@@ -1,5 +1,12 @@
 import {
-  NfcApi, NfcTagData, NfcNdefData, NfcNdefRecord, WriteTagOptions, NfcUriProtocols, NdefListenerOptions
+  NfcApi,
+  NfcTagData,
+  NfcNdefData,
+  NfcNdefRecord,
+  WriteTagOptions,
+  NfcUriProtocols,
+  NdefListenerOptions,
+  NfcvWriteOptions
 } from "./nfc.common";
 import * as utils from "tns-core-modules/utils/utils";
 
@@ -435,6 +442,77 @@ export class Nfc implements NfcApi {
       }
     });
   }
+
+  public writeSingleNfcvBytes(args: NfcvWriteOptions): Promise<any> {
+    /*
+    {
+        command // [0x02, 0x21]
+        start, // 0
+        blockSize, // 4
+        data // [0x00, 0x00, 0x2A, 0x14, 0xB1, 0x0E, 0xED, 0xCF, 0x9C, 0x7E]
+    }
+    */
+    let arg: any = {...args};
+    arg.command = arg.command.map(x => new java.lang.Byte(x));
+    let start = new Array(arg.blockSize).fill(byte(0x00));
+    start[0] = new java.lang.Byte(arg.data[0]);
+    let frames = arg.data.slice(1).reduce((acc, x, i) => {
+      let remainder = (i+1) % arg.blockSize;
+      if(remainder) {
+        acc[acc.length-1][remainder] = new java.lang.Byte(x);
+        return acc
+      } else {
+        let array = new Array(arg.blockSize).fill(0x00);
+        array[0] = new java.lang.Byte(x);
+        acc.push(array);
+        return acc
+      }
+    }, [start]);
+
+    frames = frames.map((arr, i) => {
+      return arg.command.concat(new java.lang.Byte(arg.start + i)).concat(arr)
+    });
+    return new Promise(function (resolve, reject) {
+      try {
+        if (!arg) {
+          reject("Nothing passed to write");
+          return;
+        }
+        let intent = application.android.foregroundActivity.getIntent();
+        if (intent === null || nfcIntentHandler.savedIntent === null) {
+          reject("Can not write to tag; didn't receive an intent");
+          return;
+        }
+        let savedTag = nfcIntentHandler.savedIntent.getParcelableExtra(android.nfc.NfcAdapter.EXTRA_TAG) as android.nfc.Tag;
+        let tag = android.nfc.tech.NfcV.get(savedTag);
+        tag.close();
+        tag.connect();
+        let responses = frames.map(arr => {
+          return tag.transceive(arr)
+        });
+        let isOk = responses.reduce((acc, arr) => {
+          if(arr[0] === 0) {
+            return acc
+          } else {
+            let errResp = [];
+            for (let j = 0; j < arr.length; j++) {
+              errResp[j] = arr[j]
+            }
+            return errResp
+          }
+        }, 0);
+        if (isOk === 0) {
+          resolve(0);
+        }
+        else {
+          reject(isOk);
+        }
+      }
+      catch (ex) {
+        reject(ex);
+      }
+    });
+  };
 
   private writeNdefMessage(message: android.nfc.NdefMessage, tag: android.nfc.Tag): string {
     let ndef = android.nfc.tech.Ndef.get(tag);

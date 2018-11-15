@@ -1,5 +1,5 @@
 import {
-  NdefListenerOptions, NfcApi, NfcNdefData, NfcNdefRecord, NfcTagData, NfcUriProtocols,
+  NdefListenerOptions, NfcApi, NfcNdefData, NfcNdefRecord, NfcTagData, NfcUriProtocols, NfcvWriteOptions,
   WriteTagOptions
 } from "./nfc.common";
 
@@ -100,6 +100,12 @@ export class Nfc implements NfcApi, NfcSessionInvalidator {
   }
 
   public writeTag(arg: WriteTagOptions): Promise<any> {
+    return new Promise((resolve, reject) => {
+      reject("Not available on iOS");
+    });
+  }
+
+  public writeSingleNfcvBytes(args: NfcvWriteOptions): Promise<any> {
     return new Promise((resolve, reject) => {
       reject("Not available on iOS");
     });
